@@ -1,0 +1,154 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Types">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567891}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Object">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567892}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Tag">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567893}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678901}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Components">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678902}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Physics">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678903}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Scene">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678904}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Scene\Builders">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678905}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\Profiling">
+      <UniqueIdentifier>{B2C3D4E5-F6A7-8901-BCDE-F12345678906}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Reflection">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567894}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Tests">
+      <UniqueIdentifier>{B3C4D5E6-F7A8-9012-CDEF-012345678907}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ConsoleApplication13.cpp" />
+    <ClCompile Include="Core\Object\GameObject.cpp">
+      <Filter>Core\Object</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Scene\Scene.cpp">
+      <Filter>Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\CollisionSystem.cpp">
+      <Filter>Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\TransformComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\PhysicsComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\ColliderComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\RenderComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\ScriptComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Components\ChildObjectComponent.cpp">
+      <Filter>Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Profiling\PerfettoTracer.cpp">
+      <Filter>Engine\Profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Tag\GameTags.cpp">
+      <Filter>Core\Tag</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Reflection\PropertyMeta.cpp">
+      <Filter>Core\Reflection</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Core\Types\CoreTypes.h">
+      <Filter>Core\Types</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Object\Component.h">
+      <Filter>Core\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Object\GameObject.h">
+      <Filter>Core\Object</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Tag\GameplayTag.h">
+      <Filter>Core\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Tag\GameTags.h">
+      <Filter>Core\Tag</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\TransformComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\PhysicsComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ColliderComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\RenderComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ScriptComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Components\ChildObjectComponent.h">
+      <Filter>Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\CollisionSystem.h">
+      <Filter>Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\DynamicAABBTree.h">
+      <Filter>Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Scene.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\SceneManager.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\AsyncSceneOperation.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\SceneBuilder.h">
+      <Filter>Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Builders\MainMenuBuilder.h">
+      <Filter>Engine\Scene\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Builders\GameLevelBuilder.h">
+      <Filter>Engine\Scene\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Builders\UIOverlayBuilder.h">
+      <Filter>Engine\Scene\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Scene\Builders\LoadingBuilder.h">
+      <Filter>Engine\Scene\Builders</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiling\PerfettoTracer.h">
+      <Filter>Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Reflection\PropertyMeta.h">
+      <Filter>Core\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Tests\FrameworkTests.h">
+      <Filter>Tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
