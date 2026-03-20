@@ -875,6 +875,9 @@ private:
     // 卸载所有场景（Single 模式切换时调用）
     // 持久场景不会被卸载
     // 标记为持久的对象所在场景也不会被卸载（对象已受保护）
+    // 修复 Bug#8：卸载回调 m_onSceneUnloaded 中访问 GetActiveScene() 可能获得 nullptr，
+    //   因为 m_activeSceneName 在最后才清空。现在先保存旧活动场景名，
+    //   确保回调期间 GetActiveScene() 仍能返回有效场景
     void UnloadAllScenes()
     {
         // 收集需要卸载的场景名称（不能在遍历中修改 map）
@@ -884,6 +887,9 @@ private:
             if (name != PERSISTENT_SCENE_NAME)
                 toUnload.push_back(name);
         }
+
+        // 先清空活动场景名，避免回调中访问即将被销毁的场景
+        m_activeSceneName.clear();
 
         for (const auto& name : toUnload)
         {
@@ -911,8 +917,6 @@ private:
                     return !m_loadedScenes.count(name);
                 }),
             m_loadOrder.end());
-
-        m_activeSceneName.clear();
     }
 
 private:

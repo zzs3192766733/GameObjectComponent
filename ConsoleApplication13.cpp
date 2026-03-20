@@ -28,6 +28,9 @@
 // 属性反射系统
 #include "PropertyMeta.h"
 
+// TaskFlow 任务流编排系统
+#include "TaskFlow.h"
+
 // 框架测试套件
 #include "FrameworkTests.h"
 
@@ -520,7 +523,282 @@ int main()
 		std::cout << "\n";
 
 		// ============================================================
-		//  Step 12: 框架全面测试套件
+		//  Step 12: TaskFlow 任务流编排系统演示
+		//  参考 UE: FTaskGraph 任务图系统
+		//  参考 Unity: Job System + JobHandle
+		//  参考 taskflow: tf::Taskflow + tf::Executor
+		//
+		//  核心演示：
+		//    12.1 ThreadPool 基础多线程
+		//    12.2 Sequential（顺序任务链）
+		//    12.3 Parallel（并行任务组）
+		//    12.4 Mixed（混合编排：顺序 + 并行）
+		//    12.5 Async（异步非阻塞执行）
+		// ============================================================
+		std::cout << "\n========== TaskFlow 任务流编排系统演示 ==========\n";
+		std::cout << "参考 UE FTaskGraph / Unity JobSystem / taskflow 设计\n\n";
+
+		// --- 12.1 ThreadPool 基础演示 ---
+		{
+			std::cout << "--- 12.1 ThreadPool 基础多线程 ---\n";
+			ThreadPool pool(4);
+			std::cout << "  线程池创建完成: " << pool.GetDebugInfo() << "\n";
+
+			// 提交带返回值的任务
+			auto future1 = pool.Submit([]() -> int {
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				return 42;
+			});
+			auto future2 = pool.Submit([]() -> std::string {
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				return "Hello from ThreadPool!";
+			});
+
+			std::cout << "  任务结果1: " << future1.get() << "\n";
+			std::cout << "  任务结果2: " << future2.get() << "\n";
+
+			// 提交批量无返回值任务
+			std::atomic<int> counter{0};
+			for (int i = 0; i < 10; ++i)
+			{
+				pool.SubmitTask([&counter]() {
+					counter.fetch_add(1);
+				});
+			}
+			pool.WaitAll();
+			std::cout << "  批量任务完成: counter = " << counter.load() << " (期望10)\n\n";
+		}
+
+		// --- 12.2 Sequential 顺序任务链 ---
+		{
+			std::cout << "--- 12.2 Sequential 顺序任务链 (A → B → C) ---\n";
+			TaskFlow flow("SequentialDemo");
+			std::mutex printMtx;
+			std::vector<std::string> executionOrder;
+			std::mutex orderMtx;
+
+			auto& taskA = flow.AddTask("LoadConfig", [&]() {
+				{
+					std::lock_guard<std::mutex> lk(printMtx);
+					std::cout << "  [线程 " << std::this_thread::get_id() << "] LoadConfig 开始\n";
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(20));
+				{
+					std::lock_guard<std::mutex> lk(orderMtx);
+					executionOrder.push_back("LoadConfig");
+				}
+			});
+
+			auto& taskB = flow.AddTask("InitEngine", [&]() {
+				{
+					std::lock_guard<std::mutex> lk(printMtx);
+					std::cout << "  [线程 " << std::this_thread::get_id() << "] InitEngine 开始\n";
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(15));
+				{
+					std::lock_guard<std::mutex> lk(orderMtx);
+					executionOrder.push_back("InitEngine");
+				}
+			});
+
+			auto& taskC = flow.AddTask("StartGame", [&]() {
+				{
+					std::lock_guard<std::mutex> lk(printMtx);
+					std::cout << "  [线程 " << std::this_thread::get_id() << "] StartGame 开始\n";
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(10));
+				{
+					std::lock_guard<std::mutex> lk(orderMtx);
+					executionOrder.push_back("StartGame");
+				}
+			});
+
+			// 建立顺序依赖：A → B → C
+			flow.MakeSequential(taskA, taskB, taskC);
+
+			TaskExecutor executor(4);
+			executor.RunAndWait(flow);
+
+			// 验证执行顺序
+			std::cout << "  执行顺序: ";
+			for (size_t i = 0; i < executionOrder.size(); ++i)
+			{
+				if (i > 0) std::cout << " → ";
+				std::cout << executionOrder[i];
+			}
+			std::cout << "\n";
+
+			bool orderCorrect = executionOrder.size() == 3
+				&& executionOrder[0] == "LoadConfig"
+				&& executionOrder[1] == "InitEngine"
+				&& executionOrder[2] == "StartGame";
+			std::cout << "  顺序验证: " << (orderCorrect ? "PASS" : "FAIL") << "\n";
+
+			// 打印执行报告
+			std::cout << flow.GetExecutionReport();
+			std::cout << "\n";
+		}
+
+		// --- 12.3 Parallel 并行任务组 ---
+		{
+			std::cout << "--- 12.3 Parallel 并行任务组 (A | B | C 同时执行) ---\n";
+			TaskFlow flow("ParallelDemo");
+
+			std::atomic<int> concurrentPeak{0};
+			std::atomic<int> currentRunning{0};
+
+			auto makeParallelTask = [&](const std::string& name, int sleepMs) -> std::function<void()>
+			{
+				return [&, name, sleepMs]()
+				{
+					int running = ++currentRunning;
+					// 更新并发峰值
+					int expected = concurrentPeak.load();
+					while (running > expected && !concurrentPeak.compare_exchange_weak(expected, running))
+						expected = concurrentPeak.load();
+
+					std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+					--currentRunning;
+				};
+			};
+
+			auto& pA = flow.AddTask("LoadTextures", makeParallelTask("LoadTextures", 30));
+			auto& pB = flow.AddTask("LoadMeshes",   makeParallelTask("LoadMeshes", 25));
+			auto& pC = flow.AddTask("LoadAudio",    makeParallelTask("LoadAudio", 20));
+
+			// 无依赖 → 三个任务可以并行执行
+			TaskExecutor executor(4);
+
+			auto startTime = std::chrono::high_resolution_clock::now();
+			executor.RunAndWait(flow);
+			auto endTime = std::chrono::high_resolution_clock::now();
+
+			double totalMs = std::chrono::duration<double, std::milli>(endTime - startTime).count();
+
+			std::cout << "  并发峰值: " << concurrentPeak.load() << " (期望 >= 2)\n";
+			std::cout << "  总耗时: " << totalMs << "ms (如果并行应 < 60ms，串行需 75ms)\n";
+			std::cout << "  并行验证: " << (concurrentPeak.load() >= 2 ? "PASS" : "FAIL") << "\n";
+			std::cout << flow.GetExecutionReport();
+			std::cout << "\n";
+		}
+
+		// --- 12.4 Mixed 混合编排 ---
+		{
+			std::cout << "--- 12.4 Mixed 混合编排 (Fork-Join 模式) ---\n";
+			std::cout << "  拓扑: Init → {LoadTex | LoadMesh | LoadAudio} → BuildScene → Render\n\n";
+
+			TaskFlow flow("MixedDemo");
+			std::vector<std::string> completionLog;
+			std::mutex logMtx;
+
+			auto logTask = [&](const std::string& name, int sleepMs) -> std::function<void()>
+			{
+				return [&logMtx, &completionLog, name, sleepMs]()
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(sleepMs));
+					std::lock_guard<std::mutex> lk(logMtx);
+					completionLog.push_back(name);
+				};
+			};
+
+			// 阶段1: Init（顺序）
+			auto& init = flow.AddTask("Init", logTask("Init", 10));
+
+			// 阶段2: 并行加载（Fork）
+			auto& loadTex  = flow.AddTask("LoadTex",  logTask("LoadTex", 30));
+			auto& loadMesh = flow.AddTask("LoadMesh", logTask("LoadMesh", 20));
+			auto& loadAudio= flow.AddTask("LoadAudio",logTask("LoadAudio", 25));
+
+			// 阶段3: BuildScene（Join，等待所有加载完成）
+			auto& build = flow.AddTask("BuildScene", logTask("BuildScene", 15));
+
+			// 阶段4: Render（顺序）
+			auto& render = flow.AddTask("Render", logTask("Render", 5));
+
+			// 建立依赖关系
+			// Init → {LoadTex, LoadMesh, LoadAudio}
+			flow.MakeForkParallel(init, {&loadTex, &loadMesh, &loadAudio});
+			// {LoadTex, LoadMesh, LoadAudio} → BuildScene
+			flow.MakeParallelJoin({&loadTex, &loadMesh, &loadAudio}, build);
+			// BuildScene → Render
+			render.DependsOn(build);
+
+			TaskExecutor executor(4);
+			executor.RunAndWait(flow);
+
+			// 验证：Init 必须第一个完成，Render 必须最后一个
+			bool initFirst  = !completionLog.empty() && completionLog.front() == "Init";
+			bool renderLast = !completionLog.empty() && completionLog.back() == "Render";
+
+			// 验证：BuildScene 必须在三个 Load 之后
+			int buildIdx = -1, maxLoadIdx = -1;
+			for (int i = 0; i < (int)completionLog.size(); ++i)
+			{
+				if (completionLog[i] == "BuildScene") buildIdx = i;
+				if (completionLog[i].find("Load") == 0 && i > maxLoadIdx) maxLoadIdx = i;
+			}
+			bool buildAfterLoad = buildIdx > maxLoadIdx && maxLoadIdx >= 0;
+
+			std::cout << "  完成顺序: ";
+			for (size_t i = 0; i < completionLog.size(); ++i)
+			{
+				if (i > 0) std::cout << " → ";
+				std::cout << completionLog[i];
+			}
+			std::cout << "\n";
+			std::cout << "  Init 最先: " << (initFirst ? "PASS" : "FAIL") << "\n";
+			std::cout << "  Build 在 Load 之后: " << (buildAfterLoad ? "PASS" : "FAIL") << "\n";
+			std::cout << "  Render 最后: " << (renderLast ? "PASS" : "FAIL") << "\n";
+
+			// 打印 DOT 图和执行报告
+			std::cout << "\n  [DOT 图（可用 Graphviz 可视化）]:\n" << flow.ToDot();
+			std::cout << flow.GetExecutionReport();
+			std::cout << "\n";
+		}
+
+		// --- 12.5 Async 异步非阻塞执行 ---
+		{
+			std::cout << "--- 12.5 Async 异步非阻塞执行 ---\n";
+			TaskFlow flow("AsyncDemo");
+			std::atomic<bool> taskDone{false};
+
+			flow.AddTask("BackgroundWork", [&taskDone]() {
+				std::this_thread::sleep_for(std::chrono::milliseconds(50));
+				taskDone = true;
+			});
+
+			TaskExecutor executor(2);
+			auto future = executor.Run(flow);  // 异步提交，不阻塞
+
+			// 主线程继续做其他事
+			std::cout << "  异步任务已提交，主线程继续运行...\n";
+			int mainWorkCount = 0;
+			while (!future->IsCompleted())
+			{
+				++mainWorkCount;
+				std::this_thread::sleep_for(std::chrono::milliseconds(5));
+			}
+
+			std::cout << "  主线程在等待期间执行了 " << mainWorkCount << " 次轮询\n";
+			std::cout << "  任务完成: " << (taskDone.load() ? "PASS" : "FAIL") << "\n";
+			std::cout << "  Future 状态: " << (future->IsCompleted() ? "Completed" : "Pending") << "\n";
+
+			// 带超时的等待演示
+			TaskFlow flow2("TimeoutDemo");
+			flow2.AddTask("SlowTask", []() {
+				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			});
+
+			auto future2 = executor.Run(flow2);
+			bool doneInTime = future2->WaitFor(10);  // 只等10ms
+			std::cout << "  WaitFor(10ms): " << (doneInTime ? "在时间内完成" : "超时（符合预期）") << "\n";
+			future2->Wait();  // 最终等待完成
+			std::cout << "  最终等待完成: PASS\n";
+			std::cout << "\n";
+		}
+
+		// ============================================================
+		//  Step 13: 框架全面测试套件
 		//  检查框架各子系统的正确性、边界条件、临界情况
 		// ============================================================
 		std::cout << "\n========== 最终重置 SceneManager（测试前清理）==========\n";
@@ -536,7 +814,7 @@ int main()
 	} // ← PROFILE_FUNCTION() 的 ProfileScope 在此析构，写入 main 的整体耗时
 
 	// ============================================================
-	//  Step 11: Profiling 结果导出
+	//  Step 14: Profiling 结果导出
 	//  结束会话并生成 engine_profile.json
 	//  可在 https://ui.perfetto.dev/ 中打开查看火焰图
 	// ============================================================

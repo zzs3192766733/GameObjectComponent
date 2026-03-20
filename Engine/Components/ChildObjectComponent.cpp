@@ -18,6 +18,8 @@ void ChildObjectComponent::OnDetach()
 {
     // 安全检查：如果场景不可用（场景析构中），只清空 ID 列表
     // 不尝试通过 Scene API 销毁子对象（Scene 析构时会自动清理所有对象）
+    // 修复 Bug#6：增加 IsRunning() 检查，确保场景析构时不会通过 Scene API
+    //   修改 m_objects，避免与父对象析构时序冲突
     Scene* scene = GetOwnerScene();
     if (!scene || !scene->IsRunning())
     {

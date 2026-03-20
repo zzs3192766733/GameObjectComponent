@@ -316,7 +316,7 @@ std::vector<GameObject*> Scene::FindGameObjectsByTag(const GameplayTag& tag) con
     }
     --m_iterateDepth;
     if (m_iterateDepth == 0)
-        const_cast<Scene*>(this)->FlushPendingOperations();
+        FlushIfOutermostConst();
     return result;
 }
 
@@ -334,7 +334,7 @@ std::vector<GameObject*> Scene::FindGameObjectsByTagExact(const GameplayTag& tag
     }
     --m_iterateDepth;
     if (m_iterateDepth == 0)
-        const_cast<Scene*>(this)->FlushPendingOperations();
+        FlushIfOutermostConst();
     return result;
 }
 
@@ -352,7 +352,7 @@ std::vector<GameObject*> Scene::FindGameObjectsWithAllTags(const GameplayTagCont
     }
     --m_iterateDepth;
     if (m_iterateDepth == 0)
-        const_cast<Scene*>(this)->FlushPendingOperations();
+        FlushIfOutermostConst();
     return result;
 }
 
@@ -370,7 +370,7 @@ std::vector<GameObject*> Scene::FindGameObjectsWithAnyTags(const GameplayTagCont
     }
     --m_iterateDepth;
     if (m_iterateDepth == 0)
-        const_cast<Scene*>(this)->FlushPendingOperations();
+        FlushIfOutermostConst();
     return result;
 }
 
@@ -483,14 +483,20 @@ bool Scene::IsAncestor(GameObjectID ancestorID, GameObjectID nodeID) const
 
 // 获取所有根对象（没有父节点的对象）
 // 用于构建场景图的顶层，也可用于编辑器的层级面板显示
+// 修复 Bug#5：添加 m_iterateDepth 遍历保护，与其他查询方法风格一致
 std::vector<GameObject*> Scene::GetRootObjects() const
 {
     std::vector<GameObject*> roots;
+    ++m_iterateDepth;
     for (auto& [id, obj] : m_objects)
     {
+        if (IsPendingDestroy(id)) continue;
         if (obj->GetParentID() == INVALID_GAME_OBJECT_ID)
             roots.push_back(obj.get());
     }
+    --m_iterateDepth;
+    if (m_iterateDepth == 0)
+        FlushIfOutermostConst();
     return roots;
 }
 

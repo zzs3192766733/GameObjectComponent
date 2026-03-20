@@ -23,6 +23,12 @@ public:
 
     void OnBuild(Scene& scene) override
     {
+        // 创建一个模块对象，用来附着所有模块组件
+        GameObjectID moduleID = scene.CreateGameObject("Module");
+        {
+            //TODO:添加组件
+        }
+
         // 背景
         GameObjectID bgID = scene.CreateGameObject("MenuBackground");
         {

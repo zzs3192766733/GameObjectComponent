@@ -34,6 +34,12 @@
     <Filter Include="Core\Reflection">
       <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567894}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Threading">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567895}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\TaskFlow">
+      <UniqueIdentifier>{A1B2C3D4-E5F6-7890-ABCD-EF1234567896}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Tests">
       <UniqueIdentifier>{B3C4D5E6-F7A8-9012-CDEF-012345678907}</UniqueIdentifier>
     </Filter>
@@ -146,6 +152,12 @@
     </ClInclude>
     <ClInclude Include="Core\Reflection\PropertyMeta.h">
       <Filter>Core\Reflection</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Threading\ThreadPool.h">
+      <Filter>Core\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaskFlow\TaskFlow.h">
+      <Filter>Core\TaskFlow</Filter>
     </ClInclude>
     <ClInclude Include="Tests\FrameworkTests.h">
       <Filter>Tests</Filter>

@@ -108,7 +108,7 @@ public:
         }
         --m_iterateDepth;
         if (m_iterateDepth == 0)
-            const_cast<Scene*>(this)->FlushPendingOperations();
+            FlushIfOutermostConst();
     }
 
     // 收集所有拥有组件 T 的对象
@@ -126,7 +126,7 @@ public:
         }
         --m_iterateDepth;
         if (m_iterateDepth == 0)
-            const_cast<Scene*>(this)->FlushPendingOperations();
+            FlushIfOutermostConst();
         return result;
     }
 
@@ -182,6 +182,13 @@ private:
 
     bool IsPendingDestroy(GameObjectID id) const;
     void FlushPendingOperations();
+    // 安全的 const 版本：仅在 const 查询方法中使用
+    // Scene 对象永远不会放在只读内存中（因为包含 mutable 成员），所以 const_cast 是安全的
+    void FlushIfOutermostConst() const
+    {
+        if (m_iterateDepth == 0)
+            const_cast<Scene*>(this)->FlushPendingOperations();
+    }
     bool DestroyGameObjectImmediate(GameObjectID id);
     void PrintHierarchy(GameObjectID parentID, int indent) const;
 
@@ -191,12 +198,6 @@ private:
     // --------------------------------------------------------
     std::string     m_name;
     bool            m_running = false;
-
-    // 对象存储：ID -> unique_ptr<GameObject>（Scene 拥有所有权）
-    std::unordered_map<GameObjectID, std::unique_ptr<GameObject>> m_objects;
-
-    // 创建顺序（保证 Update 顺序确定性）
-    std::vector<GameObjectID> m_creationOrder;
 
     // 碰撞检测系统（Scene 拥有，每帧在 FixedUpdate 中驱动）
     // 使用 unique_ptr 避免循环包含（CollisionSystem.h 需要 Scene 完整定义）
@@ -212,9 +213,17 @@ private:
     mutable int m_iterateDepth = 0;
 
     // 遍历期间新增的对象（下一帧生效）
-    std::vector<std::pair<GameObjectID, std::unique_ptr<GameObject>>> m_pendingAdd;
+    // 修复 Bug#4：声明为 mutable，因为 const 查询方法（FindGameObjectsByTag 等）
+    //   在遍历结束后需要调用 FlushPendingOperations，消除 const_cast 导致的 UB 风险
+    mutable std::vector<std::pair<GameObjectID, std::unique_ptr<GameObject>>> m_pendingAdd;
 
     // 遍历期间待销毁的对象（遍历结束后统一销毁）
-    std::vector<GameObjectID> m_pendingDestroy;
-    std::unordered_set<GameObjectID> m_pendingDestroySet;  // 修复：用于 O(1) 快速查找
+    mutable std::vector<GameObjectID> m_pendingDestroy;
+    mutable std::unordered_set<GameObjectID> m_pendingDestroySet;  // 修复：用于 O(1) 快速查找
+
+    // 对象存储：ID -> unique_ptr<GameObject>（Scene 拥有所有权）
+    std::unordered_map<GameObjectID, std::unique_ptr<GameObject>> m_objects;
+
+    // 创建顺序（保证 Update 顺序确定性）
+    std::vector<GameObjectID> m_creationOrder;
 };

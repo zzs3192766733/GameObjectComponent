@@ -72,6 +72,9 @@ set(SOURCES
 
     # Engine 层 — 场景
     Engine/Scene/Scene.cpp
+
+    # Core 层 — TaskFlow（header-only，无 .cpp）
+    # ThreadPool 和 TaskFlow 均为 header-only 实现
 )
 
 # ============================================================
@@ -121,6 +124,12 @@ set(HEADERS
     Engine/Scene/Builders/UIOverlayBuilder.h
     Engine/Scene/Builders/LoadingBuilder.h
 
+    # Core 层 — 多线程
+    Core/Threading/ThreadPool.h
+
+    # Core 层 — TaskFlow
+    Core/TaskFlow/TaskFlow.h
+
     # 测试
     Tests/FrameworkTests.h
 )
@@ -147,6 +156,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Scene
     ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Scene/Builders
     ${CMAKE_CURRENT_SOURCE_DIR}/Engine/Profiling
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/Threading
+    ${CMAKE_CURRENT_SOURCE_DIR}/Core/TaskFlow
     ${CMAKE_CURRENT_SOURCE_DIR}/Tests
 )
 
